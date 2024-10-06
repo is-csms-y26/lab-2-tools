@@ -1,0 +1,29 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:latest
+    container_name: lab-2-tools-postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    networks:
+      - configuration-service-network
+  
+  configuration-service:
+    image: lab-2-tools-image
+    container_name: configuration-service
+    build:
+      context: .
+    networks:
+      - configuration-service-network
+    environment:
+      Persistence__Postgres__Host: postgres
+
+networks:
+  configuration-service-network:
+    driver: bridge
