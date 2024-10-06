@@ -15,12 +15,13 @@ services:
       - configuration-service-network
   
   configuration-service:
-    image: lab-2-tools-image
+    image: ghcr.io/is-csms-y26/lab-2-tools:master
+    platform: linux/amd64
     container_name: configuration-service
-    build:
-      context: .
     networks:
       - configuration-service-network
+    ports:
+      - '8080:8080'
     environment:
       Persistence__Postgres__Host: postgres
 
