@@ -32,7 +32,7 @@ public class ConfigurationController : ControllerBase
         pageToken = configurations.Length == pageSize ? configurations[^1].Id.ToString() : null;
 
         IEnumerable<ConfigurationItemDto> dto = configurations
-            .Select(x => new ConfigurationItemDto(x.Key.Value, x.Key.Value));
+            .Select(x => new ConfigurationItemDto(x.Key.Value, x.Value.Value));
 
         return Ok(new QueryConfigurationsResponse(dto, pageToken));
     }
