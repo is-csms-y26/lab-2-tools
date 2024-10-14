@@ -1,6 +1,7 @@
 using Lab2.Tools.Abstractions.Models;
 using Lab2.Tools.Abstractions.Persistence;
 using Lab2.Tools.Models;
+using Lab2.Tools.Tools;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Lab2.Tools.Controllers;
@@ -10,26 +11,37 @@ namespace Lab2.Tools.Controllers;
 public class ConfigurationController : ControllerBase
 {
     private readonly IConfigurationRepository _repository;
+    private readonly PageTokenSerializer _pageTokenSerializer;
 
-    public ConfigurationController(IConfigurationRepository repository)
+    public ConfigurationController(IConfigurationRepository repository, PageTokenSerializer pageTokenSerializer)
     {
         _repository = repository;
+        _pageTokenSerializer = pageTokenSerializer;
     }
 
     [HttpGet]
     public async Task<ActionResult<QueryConfigurationsResponse>> QueryAsync(
         [FromQuery] int pageSize,
-        [FromQuery] string? pageToken,
-        CancellationToken cancellationToken)
+        [FromQuery] string? pageToken = null)
     {
-        int cursor = int.TryParse(pageToken, out int value) ? value : 0;
-        var query = ConfigurationQuery.Build(x => x.WithPageSize(pageSize).WithCursor(cursor));
+        CancellationToken cancellationToken = HttpContext.RequestAborted;
+
+        ConfigurationPageToken? parsedPageToken = _pageTokenSerializer.TryDeserialize(
+            pageToken,
+            ConfigurationPageToken.Empty);
+
+        if (parsedPageToken is null)
+            return BadRequest("Invalid page token");
+
+        var query = ConfigurationQuery.Build(x => x.WithPageSize(pageSize).WithCursor(parsedPageToken.Id));
 
         ConfigurationItem[] configurations = await _repository
             .QueryAsync(query, cancellationToken)
             .ToArrayAsync(cancellationToken);
 
-        pageToken = configurations.Length == pageSize ? configurations[^1].Id.ToString() : null;
+        pageToken = configurations.Length == pageSize
+            ? _pageTokenSerializer.Serialize(new ConfigurationPageToken(configurations[^1].Id))
+            : null;
 
         IEnumerable<ConfigurationItemDto> dto = configurations
             .Select(x => new ConfigurationItemDto(x.Key.Value, x.Value.Value));

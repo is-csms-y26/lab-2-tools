@@ -1,10 +1,12 @@
 using Itmo.Dev.Platform.Common.Extensions;
 using Lab2.Tools.Persistence.Extensions;
+using Lab2.Tools.Tools;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddPlatform();
 builder.Services.AddPersistence();
+builder.Services.AddSingleton<PageTokenSerializer>();
 
 builder.Services.AddControllers();
 
